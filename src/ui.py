@@ -23,7 +23,7 @@ def q(sql, params=(), one=False):
 def ui_ping():
     return "UI OK", 200
 
-# -------- CONSUMIDORES (CRUD UI) --------
+# Consumidores
 @ui.get("/consumidores")
 def ui_list_consumidores():
     rows = q("SELECT id, nombre, email, direccion FROM consumidores")
@@ -71,7 +71,7 @@ def ui_delete_consumidor(cid):
     q("DELETE FROM consumidores WHERE id=%s", (cid,))
     return redirect(url_for("ui.ui_list_consumidores"))
 
-# -------- TÉCNICOS (CRUD UI) --------
+# Tecnicos
 @ui.get("/tecnicos")
 def ui_list_tecnicos():
     rows = q("SELECT id, nombre, telefono, especialidad FROM tecnicos")
@@ -118,7 +118,7 @@ def ui_delete_tecnico(tid):
     q("DELETE FROM tecnicos WHERE id=%s", (tid,))
     return redirect(url_for("ui.ui_list_tecnicos"))
 
-# -------- ADMINISTRADORES (CRUD UI) --------
+# Administradores
 @ui.get("/administradores")
 def ui_list_admins():
     rows = q("SELECT id, nombre, email FROM administradores")

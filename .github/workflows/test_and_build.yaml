@@ -18,8 +18,8 @@ jobs:
         ports:
           - 3306:3306
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"   # password vacío para root
-          MYSQL_DATABASE: fumigaciones_db     # coincide con tu config.py
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"  
+          MYSQL_DATABASE: fumigaciones_db     
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
           --health-interval=10s

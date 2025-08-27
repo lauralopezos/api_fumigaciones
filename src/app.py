@@ -1,6 +1,6 @@
 import os
 from flask import Flask, jsonify
-from config import config
+from config import cnfg
 from db import mysql
 from routes import consumidores_bp, tecnicos_bp, administradores_bp
 from ui import ui
@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TPL_DIR  = os.path.join(BASE_DIR, "templates")
 
 app = Flask(__name__, template_folder=TPL_DIR)
-app.config.from_object(config['development'])
+app.config.from_object(cnfg['development'])
 
 mysql.init_app(app)
 
