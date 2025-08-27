@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Administradores</h2>
+<p><a href="{{ url_for('ui.ui_new_admin') }}">+ Nuevo administrador</a></p>
+<table>
+  <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Acciones</th></tr>
+  {% for a in rows %}
+  <tr>
+    <td>{{ a.id }}</td><td>{{ a.nombre }}</td><td>{{ a.email }}</td>
+    <td>
+      <a href="{{ url_for('ui.ui_edit_admin', aid=a.id) }}">Editar</a>
+      <form class="inline" method="post" action="{{ url_for('ui.ui_delete_admin', aid=a.id) }}"
+            onsubmit="return confirm('¿Eliminar administrador #{{ a.id }}?')">
+        <button type="submit">Eliminar</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

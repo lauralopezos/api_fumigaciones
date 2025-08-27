@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fumigaciones</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:20px;}
+    nav a{margin-right:12px;}
+    table{border-collapse:collapse;width:100%;margin-top:10px;}
+    th,td{border:1px solid #ddd;padding:8px;}
+    th{background:#f6f6f6;}
+    .inline{display:inline;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/ui/consumidores">Consumidores</a>
+    <a href="/ui/tecnicos">Técnicos</a>
+    <a href="/ui/administradores">Administradores</a>
+  </nav>
+  <hr>
+  {% block content %}{% endblock %}
+</body>
+</html>

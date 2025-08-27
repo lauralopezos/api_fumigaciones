@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Editar' if mode == 'edit' else 'Nuevo' }} técnico</h2>
+<form method="post">
+  <label>Nombre<br><input name="nombre" value="{{ item.nombre if item else '' }}" required></label><br>
+  <label>Teléfono<br><input name="telefono" value="{{ item.telefono if item else '' }}"></label><br>
+  <label>Especialidad<br><input name="especialidad" value="{{ item.especialidad if item else '' }}"></label><br>
+  <button type="submit">{{ 'Actualizar' if mode == 'edit' else 'Crear' }}</button>
+  <a href="{{ url_for('ui.ui_list_tecnicos') }}">Cancelar</a>
+</form>
+{% endblock %}

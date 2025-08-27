@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Consumidores</h2>
+<p><a href="{{ url_for('ui.ui_new_consumidor') }}">+ Nuevo consumidor</a></p>
+<table>
+  <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Dirección</th><th>Acciones</th></tr>
+  {% for c in rows %}
+  <tr>
+    <td>{{ c.id }}</td><td>{{ c.nombre }}</td><td>{{ c.email }}</td><td>{{ c.direccion }}</td>
+    <td>
+      <a href="{{ url_for('ui.ui_edit_consumidor', cid=c.id) }}">Editar</a>
+      <form class="inline" method="post" action="{{ url_for('ui.ui_delete_consumidor', cid=c.id) }}"
+            onsubmit="return confirm('¿Eliminar consumidor #{{ c.id }}?')">
+        <button type="submit">Eliminar</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

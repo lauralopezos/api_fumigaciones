@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Editar' if mode == 'edit' else 'Nuevo' }} administrador</h2>
+<form method="post">
+  <label>Nombre<br><input name="nombre" value="{{ item.nombre if item else '' }}" required></label><br>
+  <label>Email<br><input name="email" type="email" value="{{ item.email if item else '' }}" required></label><br>
+  <button type="submit">{{ 'Actualizar' if mode == 'edit' else 'Crear' }}</button>
+  <a href="{{ url_for('ui.ui_list_admins') }}">Cancelar</a>
+</form>
+{% endblock %}
