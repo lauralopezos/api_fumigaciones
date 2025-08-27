@@ -1,4 +1,3 @@
-# ui.py
 import os
 from flask import Blueprint, render_template, request, redirect, url_for
 from db import mysql

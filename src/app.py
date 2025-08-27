@@ -17,12 +17,11 @@ mysql.init_app(app)
 def health():
     return jsonify({"status": "ok"})
 
-# API REST JSON
 app.register_blueprint(consumidores_bp)
 app.register_blueprint(tecnicos_bp)
 app.register_blueprint(administradores_bp)
 
-# UI (formularios)
+
 app.register_blueprint(ui)
 
 if __name__ == "__main__":
