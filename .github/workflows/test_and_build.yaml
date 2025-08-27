@@ -2,7 +2,7 @@ name: Test and build
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
 
 permissions:
@@ -15,69 +15,47 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: fumigaciones_db
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=20
         ports:
           - 3306:3306
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"   # password vacío para root
+          MYSQL_DATABASE: fumigaciones_db     # coincide con tu config.py
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install OS deps for mysqlclient
+      - name: Install system packages for mysqlclient
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc default-libmysqlclient-dev
+          sudo apt-get install -y default-libmysqlclient-dev build-essential
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      - name: Install Python deps
-        run: pip install -r requirements.txt
-
-      - name: Wait for MySQL to be ready
+      - name: Install dependencies
         run: |
-          for i in {1..60}; do
-            if mysqladmin ping -h 127.0.0.1 --silent; then
-              echo "MySQL is up!"
-              break
-            fi
-            echo "Waiting for MySQL..."
-            sleep 1
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for MySQL to be healthy
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h 127.0.0.1 --silent && break
+            sleep 2
           done
 
-      - name: Init schema
-        run: |
-          mysql -h 127.0.0.1 -uroot fumigaciones_db <<'SQL'
-          CREATE TABLE IF NOT EXISTS consumidores (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            email VARCHAR(120) NOT NULL UNIQUE,
-            direccion VARCHAR(200)
-          );
-          CREATE TABLE IF NOT EXISTS tecnicos (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            telefono VARCHAR(50),
-            especialidad VARCHAR(100)
-          );
-          CREATE TABLE IF NOT EXISTS administradores (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            email VARCHAR(120) NOT NULL UNIQUE
-          );
-          SQL
-
       - name: Run tests with coverage
-        run: pytest -q --cov=src --cov-report=term-missing
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ""
+          MYSQL_DB: fumigaciones_db
+        run: |
+          pytest -q --cov=src --cov-report=term-missing
