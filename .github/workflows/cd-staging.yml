@@ -1,0 +1,80 @@
+name: CD - Staging
+
+on:
+  push:
+    branches: ["develop"]
+
+jobs:
+  build-test-publish-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/$(echo ${{ github.repository }} | awk -F/ '{print $2}')
+      COVERAGE_MIN: "60"
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests with coverage (staging gate)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        run: |
+          pytest -q --cov=src --cov-report=xml
+          python - << 'PY'
+
+import xml.etree.ElementTree as ET, sys, os
+tree = ET.parse('coverage.xml')
+cov = float(tree.getroot().attrib['line-rate']) * 100.0
+print(f"Coverage: {cov:.2f}%")
+min_req = float(os.environ['COVERAGE_MIN'])
+if cov < min_req:
+    print(f"FAILED: coverage {cov:.2f}% < {min_req:.2f}%"); sys.exit(1)
+PY
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+      - name: Build image
+        run: |
+          docker build -t $IMAGE_NAME:fumi-${{ github.sha }} -t $IMAGE_NAME:staging-latest .
+
+      - name: Push image
+        run: |
+          docker push $IMAGE_NAME:fumi-${{ github.sha }}
+          docker push $IMAGE_NAME:staging-latest
+
+      - name: Deploy to Fly (staging)
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          export FLYCTL_INSTALL="$HOME/.fly"
+          export PATH="$FLYCTL_INSTALL/bin:$PATH"
+          flyctl deploy --config fly.staging.toml --image $IMAGE_NAME:fumi-${{ github.sha }} --strategy immediate -a fumiclick-staging

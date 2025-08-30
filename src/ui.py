@@ -9,7 +9,7 @@ from flask import (
     abort,
 )
 
-from db import (
+from .db import (
     fetch_all as db_fetch_all,
     fetch_one as db_fetch_one,
     execute as db_execute,

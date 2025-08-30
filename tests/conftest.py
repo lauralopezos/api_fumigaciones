@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 import pytest
+from src.app import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT / "src"
@@ -26,5 +27,8 @@ def _clean_db(test_app):
     yield
 
 @pytest.fixture()
-def client(test_app):
-    return test_app.test_client()
+def client():
+    os.environ["DATABASE_URL"] = os.environ.get("DATABASE_URL_TEST", "")
+    app = create_app()
+    with app.test_client() as c:
+        yield c
