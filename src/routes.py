@@ -15,7 +15,7 @@ bp.register_blueprint(tecnicos_bp)
 bp.register_blueprint(administradores_bp)
 
 
-# Consumidores (API)
+# Consumidores
 
 @consumidores_bp.get("")
 @consumidores_bp.get("/")
@@ -52,35 +52,64 @@ def crear_consumidor():
     return jsonify({"id": new_id, "nombre": nombre, "email": email, "direccion": direccion}), 201
 
 @consumidores_bp.put("/<int:cid>")
-def actualizar_consumidor(cid):
+def put_consumidor(cid):
     data = request.get_json() or {}
+    # 1) existe?
+    if not db_fetch_one("SELECT id FROM consumidores WHERE id=%s", (cid,)):
+        return jsonify({"detail": "Consumidor no encontrado"}), 404
+
     nombre = data.get("nombre")
     email = data.get("email")
     direccion = data.get("direccion")
 
-    if not db_fetch_one("SELECT id FROM consumidores WHERE id=%s", (cid,)):
-        return jsonify({"detail": "Consumidor no encontrado"}), 404
-
-    if email and db_fetch_one("SELECT id FROM consumidores WHERE email=%s AND id<>%s", (email, cid)):
+    # 2) validaciones específicas
+    if email and db_fetch_one(
+        "SELECT id FROM consumidores WHERE email=%s AND id<>%s", (email, cid)
+    ):
         return jsonify({"detail": "El email ya está en uso"}), 400
 
+    # 3) construir SET dinámico
     campos, vals = [], []
-    if nombre is not None:
-        campos.append("nombre=%s"); vals.append(nombre)
-    if email is not None:
-        campos.append("email=%s"); vals.append(email)
-    if direccion is not None:
-        campos.append("direccion=%s"); vals.append(direccion)
+    if nombre is not None: campos.append("nombre=%s"); vals.append(nombre)
+    if email  is not None: campos.append("email=%s");  vals.append(email)
+    if direccion is not None: campos.append("direccion=%s"); vals.append(direccion)
 
     if not campos:
         return jsonify({"detail": "Nada para actualizar"}), 400
 
     vals.append(cid)
     q = f"UPDATE consumidores SET {', '.join(campos)} WHERE id=%s"
-    affected, _ = db_execute(q, tuple(vals))
-    if affected == 0:
-        return jsonify({"detail": "Consumidor no encontrado"}), 404
+    db_execute(q, tuple(vals))
     return jsonify({"detail": "Consumidor actualizado"}), 200
+
+
+@consumidores_bp.patch("/<int:cid>")
+def patch_consumidor(cid):
+    data = request.get_json() or {}
+
+    if not db_fetch_one("SELECT id FROM consumidores WHERE id=%s", (cid,)):
+        return jsonify({"detail": "Consumidor no encontrado"}), 404
+
+    nombre = data.get("nombre")
+    email = data.get("email")
+    direccion = data.get("direccion")
+
+    if email and db_fetch_one("SELECT id FROM consumidores WHERE email=%s AND id<>%s", (email, cid)):
+        return jsonify({"detail": "El email ya está en uso"}), 400
+
+    campos, vals = [], []
+    if nombre is not None: campos.append("nombre=%s"); vals.append(nombre)
+    if email is not None: campos.append("email=%s"); vals.append(email)
+    if direccion is not None: campos.append("direccion=%s"); vals.append(direccion)
+
+    if not campos:
+        return jsonify({"detail": "Nada para actualizar"}), 400
+
+    vals.append(cid)
+    q = f"UPDATE consumidores SET {', '.join(campos)} WHERE id=%s"
+    db_execute(q, tuple(vals))
+    return jsonify({"detail": "Consumidor actualizado"}), 200
+
 
 @consumidores_bp.delete("/<int:cid>")
 def eliminar_consumidor(cid):
@@ -90,7 +119,7 @@ def eliminar_consumidor(cid):
     return jsonify({"detail": "Consumidor eliminado"}), 200
 
 
-# Técnicos (API)
+# Técnicos
 
 @tecnicos_bp.get("")
 @tecnicos_bp.get("/")
@@ -131,32 +160,52 @@ def crear_tecnico():
     return jsonify({"id": new_id, "nombre": nombre, "telefono": telefono, "especialidad": especialidad}), 201
 
 @tecnicos_bp.put("/<int:tid>")
-def actualizar_tecnico(tid):
+def put_tecnico(tid):
     data = request.get_json() or {}
+    if not db_fetch_one("SELECT id FROM tecnicos WHERE id=%s", (tid,)):
+        return jsonify({"detail": "Técnico no encontrado"}), 404
+
     nombre = data.get("nombre")
     telefono = data.get("telefono")
     especialidad = data.get("especialidad")
 
-    if not db_fetch_one("SELECT id FROM tecnicos WHERE id=%s", (tid,)):
-        return jsonify({"detail": "Técnico no encontrado"}), 404
-
     campos, vals = [], []
-    if nombre is not None:
-        campos.append("nombre=%s"); vals.append(nombre)
-    if telefono is not None:
-        campos.append("telefono=%s"); vals.append(telefono)
-    if especialidad is not None:
-        campos.append("especialidad=%s"); vals.append(especialidad)
+    if nombre is not None: campos.append("nombre=%s"); vals.append(nombre)
+    if telefono is not None: campos.append("telefono=%s"); vals.append(telefono)
+    if especialidad is not None: campos.append("especialidad=%s"); vals.append(especialidad)
 
     if not campos:
         return jsonify({"detail": "Nada para actualizar"}), 400
 
     vals.append(tid)
     q = f"UPDATE tecnicos SET {', '.join(campos)} WHERE id=%s"
-    affected, _ = db_execute(q, tuple(vals))
-    if affected == 0:
-        return jsonify({"detail": "Técnico no encontrado"}), 404
+    db_execute(q, tuple(vals))
     return jsonify({"detail": "Técnico actualizado"}), 200
+
+
+@tecnicos_bp.patch("/<int:tid>")
+def patch_tecnico(tid):
+    data = request.get_json() or {}
+    if not db_fetch_one("SELECT id FROM tecnicos WHERE id=%s", (tid,)):
+        return jsonify({"detail": "Técnico no encontrado"}), 404
+
+    nombre = data.get("nombre")
+    telefono = data.get("telefono")
+    especialidad = data.get("especialidad")
+
+    campos, vals = [], []
+    if nombre is not None: campos.append("nombre=%s"); vals.append(nombre)
+    if telefono is not None: campos.append("telefono=%s"); vals.append(telefono)
+    if especialidad is not None: campos.append("especialidad=%s"); vals.append(especialidad)
+
+    if not campos:
+        return jsonify({"detail": "Nada para actualizar"}), 400
+
+    vals.append(tid)
+    q = f"UPDATE tecnicos SET {', '.join(campos)} WHERE id=%s"
+    db_execute(q, tuple(vals))
+    return jsonify({"detail": "Técnico actualizado"}), 200
+
 
 @tecnicos_bp.delete("/<int:tid>")
 def eliminar_tecnico(tid):
@@ -205,32 +254,56 @@ def crear_admin():
     return jsonify({"id": new_id, "nombre": nombre, "email": email}), 201
 
 @administradores_bp.put("/<int:aid>")
-def actualizar_admin(aid):
+def put_admin(aid):
     data = request.get_json() or {}
-    nombre = data.get("nombre")
-    email = data.get("email")
-
     if not db_fetch_one("SELECT id FROM administradores WHERE id=%s", (aid,)):
         return jsonify({"detail": "Administrador no encontrado"}), 404
 
-    if email and db_fetch_one("SELECT id FROM administradores WHERE email=%s AND id<>%s", (email, aid)):
+    nombre = data.get("nombre")
+    email = data.get("email")
+
+    if email and db_fetch_one(
+        "SELECT id FROM administradores WHERE email=%s AND id<>%s", (email, aid)
+    ):
         return jsonify({"detail": "El email ya está en uso"}), 400
 
     campos, vals = [], []
-    if nombre is not None:
-        campos.append("nombre=%s"); vals.append(nombre)
-    if email is not None:
-        campos.append("email=%s"); vals.append(email)
+    if nombre is not None: campos.append("nombre=%s"); vals.append(nombre)
+    if email  is not None: campos.append("email=%s");  vals.append(email)
 
     if not campos:
         return jsonify({"detail": "Nada para actualizar"}), 400
 
     vals.append(aid)
     q = f"UPDATE administradores SET {', '.join(campos)} WHERE id=%s"
-    affected, _ = db_execute(q, tuple(vals))
-    if affected == 0:
-        return jsonify({"detail": "Administrador no encontrado"}), 404
+    db_execute(q, tuple(vals))
     return jsonify({"detail": "Administrador actualizado"}), 200
+
+
+@administradores_bp.patch("/<int:aid>")
+def patch_admin(aid):
+    data = request.get_json() or {}
+    if not db_fetch_one("SELECT id FROM administradores WHERE id=%s", (aid,)):
+        return jsonify({"detail": "Administrador no encontrado"}), 404
+
+    nombre = data.get("nombre")
+    email = data.get("email")
+
+    if email and db_fetch_one("SELECT id FROM administradores WHERE email=%s AND id<>%s", (email, aid)):
+        return jsonify({"detail": "El email ya está en uso"}), 400
+
+    campos, vals = [], []
+    if nombre is not None: campos.append("nombre=%s"); vals.append(nombre)
+    if email is not None: campos.append("email=%s"); vals.append(email)
+
+    if not campos:
+        return jsonify({"detail": "Nada para actualizar"}), 400
+
+    vals.append(aid)
+    q = f"UPDATE administradores SET {', '.join(campos)} WHERE id=%s"
+    db_execute(q, tuple(vals))
+    return jsonify({"detail": "Administrador actualizado"}), 200
+
 
 @administradores_bp.delete("/<int:aid>")
 def eliminar_admin(aid):
