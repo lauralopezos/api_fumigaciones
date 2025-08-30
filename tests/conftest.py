@@ -1,58 +1,30 @@
-from MySQLdb import OperationalError
-from db import mysql
-from app import app
-import pytest
-import config
 import os
-import importlib
+import sys
+from pathlib import Path
+import pytest
 
+ROOT = Path(__file__).resolve().parents[1]
+SRC_DIR = ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
-os.environ.setdefault("MYSQL_HOST", "127.0.0.1")
-os.environ.setdefault("MYSQL_USER", "root")
-os.environ.setdefault("MYSQL_PASSWORD", "root")
-os.environ.setdefault("MYSQL_DB", "fumigaciones_db")
+from app import app as flask_app
+from db import execute
 
-
-config.DevelopmentConfig.MYSQL_HOST = os.environ["MYSQL_HOST"]
-config.DevelopmentConfig.MYSQL_USER = os.environ["MYSQL_USER"]
-config.DevelopmentConfig.MYSQL_PASSWORD = os.environ["MYSQL_PASSWORD"]
-config.DevelopmentConfig.MYSQL_DB = os.environ["MYSQL_DB"]
-
-
-# error 2006
-_orig_teardown = mysql.teardown
-
-
-def _teardown_safe(exception):
-    try:
-        _orig_teardown(exception)
-    except OperationalError:
-        pass
-
-
-mysql.teardown = _teardown_safe
-if hasattr(app, "teardown_appcontext_funcs"):
-    for i, f in enumerate(app.teardown_appcontext_funcs):
-        if getattr(f, "__qualname__", "").endswith("MySQL.teardown"):
-            app.teardown_appcontext_funcs[i] = _teardown_safe
-            break
-
+os.environ.setdefault("DATABASE_URL", os.getenv("DATABASE_URL_TEST", ""))
 
 @pytest.fixture(scope="session")
 def test_app():
-    return app
+    dsn_test = os.getenv("DATABASE_URL_TEST") or os.getenv("DATABASE_URL")
+    os.environ["DATABASE_URL"] = dsn_test 
+    return flask_app
 
+@pytest.fixture(autouse=True)
+def _clean_db(test_app):
+    with test_app.app_context():
+        execute("TRUNCATE administradores, tecnicos, consumidores RESTART IDENTITY CASCADE;", ())
+    yield
 
 @pytest.fixture()
 def client(test_app):
-    with test_app.app_context():
-        conn = mysql.connection
-        cur = conn.cursor()
-        cur.execute("TRUNCATE TABLE consumidores")
-        cur.execute("TRUNCATE TABLE tecnicos")
-        cur.execute("TRUNCATE TABLE administradores")
-        conn.commit()
-        cur.close()
-
-    with test_app.test_client() as c:
-        yield c
+    return test_app.test_client()

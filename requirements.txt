@@ -1,9 +1,7 @@
-Flask==3.0.3
-flask-mysqldb==2.0.0
-mysqlclient==2.2.4
+Flask==3.0.0
+psycopg2-binary==2.9.9
 
-pytest==8.3.2
+pytest==8.2.1
 pytest-cov==5.0.0
-coverage==7.6.1
-
-waitress==3.0.0
+flake8==7.1.0
+sqlalchemy

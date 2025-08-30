@@ -1,37 +1,14 @@
-name: Test and build
+name: Test and Build
 
 on:
   push:
-    branches: ["**"]
+    branches: [ "main" ]
   pull_request:
-
-permissions:
-  contents: read
+    branches: [ "main" ]
 
 jobs:
   test_and_build:
     runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: fumigaciones_db
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
-    env:
-      MYSQL_HOST: 127.0.0.1
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
-      MYSQL_DB: fumigaciones_db
-
     steps:
       - uses: actions/checkout@v4
 
@@ -40,53 +17,22 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: System deps for mysqlclient
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential default-libmysqlclient-dev
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
 
-      - name: Wait for MySQL and create schema
+      - name: Prepare test database schema
+        env:
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
         run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -u root -proot --silent; then
-              break
-            fi
-            echo "waiting for mysql"; sleep 2
-          done
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql "$DATABASE_URL_TEST" -f sql/schema.sql
 
-          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS ${MYSQL_DB};"
-
-          mysql -h 127.0.0.1 -u root -proot ${MYSQL_DB} -e "
-            CREATE TABLE IF NOT EXISTS consumidores (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              nombre VARCHAR(100) NOT NULL,
-              email VARCHAR(255) NOT NULL UNIQUE,
-              direccion VARCHAR(255)
-            );
-            CREATE TABLE IF NOT EXISTS tecnicos (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              nombre VARCHAR(100) NOT NULL,
-              telefono VARCHAR(50),
-              especialidad VARCHAR(100)
-            );
-            CREATE TABLE IF NOT EXISTS administradores (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              nombre VARCHAR(100) NOT NULL,
-              email VARCHAR(255) NOT NULL UNIQUE
-            );
-          "
-
-      - name: Run tests with coverage
-        run: 
+      - name: Run tests
+        env:
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }} 
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}           
+        run: |
           pytest -q --cov=src --cov-report=term-missing
-
-      - name: Lint
-        run: 
-         pip install flake8
-         flake8 src tests || true
-
