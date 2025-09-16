@@ -1,7 +1,7 @@
 # API Fumigaciones
 
 Este proyecto es una API REST hecha en **Python (Flask)** para la gestión de servicios de fumigación.  
-Hace parte de la materia de Ingeniería de Software / DevOps y se despliega en la nube.
+Ingeniería de Sistemas - Enfasis 1. DevOps. Se despliega en la nube.
 
 ## Tecnologías
 - Python 3
