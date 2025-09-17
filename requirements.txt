@@ -1,4 +1,4 @@
-Flask==3.0.0
+Flask==3.0.3
 psycopg2-binary==2.9.9
 
 pytest==8.2.1
@@ -6,3 +6,4 @@ pytest-cov==5.0.0
 flake8==7.1.0
 sqlalchemy
 Flask-Cors
+pg8000==1.31.2
