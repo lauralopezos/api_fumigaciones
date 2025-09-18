@@ -42,23 +42,6 @@ Dado un `orderId`, consulta la orden en la API de Orders y asegura la creación 
 
 ---
 
-## 🚀 Arquitectura
-
-```mermaid
-flowchart LR
-    subgraph Client["Cliente (Postman / Frontend)"]
-        CGET["GET /story/order/{orderId}?email=..."]
-    end
-
-    CGET --> AGW["API Gateway (HTTP API)"]
-    AGW --> LBD["AWS Lambda (story_api)\nHandler: lambda_function.lambda_handler\nEnv: ORDERS_BASE_URL, FUMI_BASE_URL"]
-    
-    LBD -->|GET /orders/{id}| ORDERS["Orders API\n(http://18.191.171.234:3002/api)"]
-    LBD -->|POST /consumidores| FUMI["Fumigaciones API\n(http://3.23.103.38/api)"]
-
-    LBD --> CW["Amazon CloudWatch Logs"]
-    LBD -->|JSON Unificado| AGW --> CGET
-
 ## Variables de entorno
 
 ORDERS_BASE_URL → http://18.191.171.234:3002/api
