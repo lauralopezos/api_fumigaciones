@@ -77,36 +77,46 @@ Muy útil para depurar problemas de path o payload.
 
 ## Diagrama
 
-[Cliente (Postman/Frontend)]
-            |
-            v
-   +--------------------------+
-   |  API Gateway (HTTP API) |
-   +-----------+--------------+
-               |
-               v
-     +----------------------+
-     |  AWS Lambda          |
-     |  function: story_api |
-     |  handler:            |
-     |  lambda_function.    |
-     |  lambda_handler      |
-     +----+-----------+-----+
-          |           |
-   GET /orders/{id}   |   POST /consumidores
-          |           |
-          v           v
-+----------------+  +----------------------+
-|  Orders API    |  | Fumigaciones API     |
-| http://18...   |  | http://3.23.../api   |
-|  /api          |  |  /consumidores       |
-+----------------+  +----------------------+
-          \           /
-           \         /
-            v       v
-         +-------------+
-         |  Respuesta  |
-         |  unificada  |
-         +-------------+
+                    +---------------------------+
+                    |   Cliente (Postman / UI)  |
+                    +-------------+-------------+
+                                  |
+                                  v
+                    +-------------+-------------+
+                    |     API Gateway (HTTP)    |
+                    +-------------+-------------+
+                                  |
+                                  v
+                    +-------------+-------------+
+                    |   AWS Lambda: story_api   |
+                    | handler: lambda_function. |
+                    |          lambda_handler   |
+                    | env: ORDERS_BASE_URL,     |
+                    |      FUMI_BASE_URL        |
+                    +------+------+-------------+
+                           |      \
+                           |       \  POST /consumidores
+                           |        \
+                           |         v
+                           |   +-----+------------------+
+                           |   |   Fumigaciones API     |
+                           |   | http://3.23.103.38/api |
+                           |   |   (/consumidores)      |
+                           |   +------------------------+
+                           |
+                           |  GET /orders/{id}
+                           v
+                    +------+--------------------+
+                    |        Orders API         |
+                    | http://18.191.171.234:3002|
+                    |           /api            |
+                    |      (/orders/{id})       |
+                    +---------------------------+
 
-(Logs y métricas en Amazon CloudWatch)
+                                   |
+                                   v
+                         +---------+----------+
+                         |  Respuesta unificada|
+                         +---------------------+
+
+(Logs y métricas: AWS Lambda → CloudWatch Logs)
